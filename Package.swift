@@ -22,16 +22,17 @@ let package = Package(
       .product(name: "HeapModule", package: "swift-collections"),
     ]),
     .testTarget(name: "AOCAlgorithmsTests", dependencies: ["AOCAlgorithms"]),
-      .plugin(
-        name: "CreateDays",
-        capability: .command(
-          intent: .custom(verb: "create-days", description: "Creates a bunch of folders"),
-          permissions: [
-            .writeToPackageDirectory(reason: "This command creates templates for each day")
-          ]
-        )
+    .plugin(
+      name: "CreateDays",
+      capability: .command(
+        intent: .custom(verb: "create-days", description: "Creates a bunch of folders"),
+        permissions: [
+          .writeToPackageDirectory(reason: "This command creates templates for each day")
+        ]
       )
-  ]
+    )
+  ],
+  swiftLanguageModes: [.v6]
 )
 
 for day in 1...25 {
