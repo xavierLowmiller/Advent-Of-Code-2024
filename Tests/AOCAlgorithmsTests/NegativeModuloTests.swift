@@ -1,12 +1,10 @@
-import XCTest
 import AOCAlgorithms
+import Testing
 
-final class NegativeModuloTests: XCTestCase {
-    func testPositiveModulo() {
-        XCTAssertEqual(15 %% 12, 3)
-    }
+@Test(.tags(.math)) func positiveModulo() {
+  #expect(15 %% 12 == 3)
+}
 
-    func testNegativeModulo() {
-        XCTAssertEqual(-15 %% 12, 9)
-    }
+@Test(.tags(.math)) func negativeModulo() {
+  #expect(-15 %% 12 == 9)
 }

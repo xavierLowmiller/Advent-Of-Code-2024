@@ -1,5 +1,5 @@
 extension Int {
-    public func squareRoot() -> Int {
-        Int(Double(self).squareRoot())
-    }
+  public func squareRoot() -> Int {
+    Int(Double(self).squareRoot())
+  }
 }
