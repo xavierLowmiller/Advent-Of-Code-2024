@@ -30,8 +30,11 @@ struct Guard: Hashable {
 
   mutating func move(_ obstructions: Set<Point>, bounds: (x: Int, y: Int)) -> Bool {
     let next = position.next(in: direction)
-    guard 0...bounds.x ~= next.x, 0...bounds.y ~= next.y else { return false }
-    
+    guard 0...bounds.x ~= next.x, 0...bounds.y ~= next.y else {
+      // Guard has left the board -> We're done
+      return false
+    }
+
     if obstructions.contains(next) {
       direction.turn()
     } else {
@@ -42,13 +45,15 @@ struct Guard: Hashable {
 }
 
 struct Board {
-  var _guard: Guard
-  var bounds: (x: Int, y: Int) = (0, 0)
-  var obstructions: Set<Point> = []
-  var routeTaken: Set<Point>
+  let _guard: Guard
+  let bounds: (x: Int, y: Int)
+  var obstructions: Set<Point>
 
   init(_ input: String) {
     var _guard: Guard!
+    var bounds: (x: Int, y: Int) = (0, 0)
+    var obstructions = Set<Point>(minimumCapacity: input.count)
+
     for (y, line) in input.split(separator: "\n").enumerated() {
       for (x, c) in line.enumerated() {
         let point = Point(x: x, y: y)
@@ -61,49 +66,62 @@ struct Board {
       }
       bounds.y = max(bounds.x, y)
     }
+
     self._guard = _guard
-    self.routeTaken = [_guard.position]
+    self.bounds = bounds
+    self.obstructions = obstructions
   }
 
-  mutating func moveGuard() {
+  func moveGuardToEdge() -> Set<Point> {
+    var _guard = _guard
+    var routeTaken = Set<Point>(minimumCapacity: bounds.x * bounds.y)
+    routeTaken.insert(_guard.position)
+
     while _guard.move(obstructions, bounds: bounds) {
       routeTaken.insert(_guard.position)
     }
+    return routeTaken
   }
 
-  mutating func moveGuardAndCheckForLoops() -> Bool {
-    var history: Set<Guard> = [_guard]
+  func moveGuardAndCheckForLoops() -> Bool {
+    var _guard = _guard
+    var history = Set<Guard>(minimumCapacity: bounds.x * bounds.y)
+    history.insert(_guard)
+
     while _guard.move(obstructions, bounds: bounds) {
-      if history.contains(_guard) {
-        return true
-      }
+      guard !history.contains(_guard) else { return true }
       history.insert(_guard)
     }
+
     return false
+  }
+
+  func numberOfPossibleObstructions() async -> Int {
+    let routeTaken = moveGuardToEdge()
+
+    return await withTaskGroup(of: Bool.self, returning: Int.self) { group in
+      for newObstruction in routeTaken {
+        guard !obstructions.contains(newObstruction) else { continue }
+        guard _guard.position != newObstruction else { continue }
+
+        group.addTask {
+          var board = self
+          board.obstructions.insert(newObstruction)
+          return board.moveGuardAndCheckForLoops()
+        }
+      }
+
+      return await group.reduce(0) { $0 + ($1 ? 1 : 0) }
+    }
   }
 }
 
 public func part1(input: String) -> Int {
-  var board = Board(input)
-  board.moveGuard()
-  return board.routeTaken.count
+  let board = Board(input)
+  return board.moveGuardToEdge().count
 }
 
-public func part2(input: String) -> Int {
+public func part2(input: String) async -> Int {
   let board = Board(input)
-  var total = 0
-  for y in 0...board.bounds.y {
-    for x in 0...board.bounds.x {
-      let newObstruction = Point(x: x, y: y)
-      guard !board.obstructions.contains(newObstruction) else { continue }
-      guard board._guard.position != newObstruction else { continue }
-
-      var board = board
-      board.obstructions.insert(newObstruction)
-      if board.moveGuardAndCheckForLoops() {
-        total += 1
-      }
-    }
-  }
-  return total
+  return await board.numberOfPossibleObstructions()
 }

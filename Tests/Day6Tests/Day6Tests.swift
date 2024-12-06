@@ -34,10 +34,11 @@ func part1(input: String, expected: Int?) {
     (input, nil)
   ]
 )
-func part2(input: String, expected: Int?) {
+func part2(input: String, expected: Int?) async {
+  let result = await part2(input: input)
   if let expected {
-    #expect(part2(input: input) == expected)
+    #expect(result == expected)
   } else {
-    print("Part 2:", part2(input: input))
+    print("Part 2:", result)
   }
 }
