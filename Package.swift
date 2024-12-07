@@ -15,6 +15,7 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-collections", from: "1.1.4"),
+    .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.0"),
   ],
   targets: [
     .target(name: "AOCAlgorithms", dependencies: [
@@ -37,7 +38,10 @@ let package = Package(
 
 for day in 1...25 {
   let day = "Day\(day)"
-  package.targets.append(.target(name: day, dependencies: ["AOCAlgorithms"]))
+  package.targets.append(.target(name: day, dependencies: [
+    "AOCAlgorithms",
+    .product(name: "Algorithms", package: "swift-algorithms"),
+  ]))
   package.targets.append(.testTarget(name: day + "Tests", dependencies: [.target(name: day)]))
   package.products.append(.library(name: day, targets: [day]))
 }
