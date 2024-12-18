@@ -67,18 +67,16 @@ public func part1(input: String, gridSize: Int, bytes: Int) -> Int {
 
 public func part2(input: String, gridSize: Int) -> Point {
   let input = input.split(separator: "\n")
-  var bytes = 0
-  while bytes < input.count {
-    let input = input.prefix(bytes)
-    let grid = Grid(input, gridSize: gridSize)
+
+  let index = (0..<input.count).partitioningIndex { bytes in
     let start = Point(x: 0, y: 0)
     let goal = Point(x: gridSize, y: gridSize)
+
+    let grid = Grid(input.prefix(bytes), gridSize: gridSize)
     let path = grid.shortestPath(from: start, to: goal)
-    if path == nil {
-      return Point(input.last!)
-    }
-    bytes += 1
+
+    return path == nil
   }
 
-  fatalError()
+  return Point(input[index - 1])
 }

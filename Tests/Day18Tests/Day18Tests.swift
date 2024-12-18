@@ -57,6 +57,6 @@ func part2(input: String, gridSize: Int, expected: Point?) {
   if let expected {
     #expect(result == expected)
   } else {
-    print("Part 2:", result)
+    print("Part 2: \(result.x),\(result.y)")
   }
 }
