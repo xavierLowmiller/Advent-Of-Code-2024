@@ -45,6 +45,14 @@ import Testing
   ) == [.frankfurt, .wuerzburg, .nuernberg, .stuttgart])
 }
 
+@Test(.tags(.search)) func AStarWithStartAndGoalBeingEqual() throws {
+  #expect(aStar(
+    start: City.frankfurt,
+    goal: .frankfurt,
+    neighbors: { City.neighbors[$0]!.map(\.0) }
+  ) == [])
+}
+
 private enum City: String {
   case augsburg = "Augsburg"
   case erfurt = "Erfurt"

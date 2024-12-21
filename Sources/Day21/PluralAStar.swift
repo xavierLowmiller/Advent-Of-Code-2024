@@ -12,17 +12,16 @@ import HeapModule
  Lower values indicate a more suitable node.
  - neighbors: The set of nodes a given node can traverse to.
 
- - Returns: The shortest/cheapest path from `start` to `goal`,
- or nil if no such path exists.
+ - Returns: All nodes visited from `start` to `goal`.
  */
-public func aStar<Node: Hashable, S: Sequence<Node>>(
+public func pluralAStar<Node: Hashable, S: Sequence<Node>>(
   start: Node,
   goal: Node,
   cost: (_ n1: Node, _ n2: Node) -> Int = { _, _ in 1 },
   heuristic: (Node) -> Int = { _ in 1 },
   neighbors: (Node) -> S
-) -> [Node]? {
-  aStar(start: start, goal: { $0 == goal }, cost: cost, heuristic: heuristic, neighbors: neighbors)
+) -> [[Node]] {
+  pluralAStar(start: start, goal: { $0 == goal }, cost: cost, heuristic: heuristic, neighbors: neighbors)
 }
 
 /**
@@ -37,18 +36,15 @@ public func aStar<Node: Hashable, S: Sequence<Node>>(
  Lower values indicate a more suitable node.
  - neighbors: The set of nodes a given node can traverse to.
 
- - Returns: The shortest/cheapest path from `start` to `goal`,
- or nil if no such path exists.
+ - Returns: All nodes visited from `start` to `goal`.
  */
-public func aStar<Node: Hashable, S: Sequence<Node>>(
+public func pluralAStar<Node: Hashable, S: Sequence<Node>>(
   start: Node,
   goal: (Node) -> Bool,
   cost: (_ n1: Node, _ n2: Node) -> Int = { _, _ in 1 },
   heuristic: (Node) -> Int = { _ in 1 },
   neighbors: (Node) -> S
-) -> [Node]? {
-
-  guard !goal(start) else { return [] }
+) -> [[Node]] {
 
   // The set of discovered nodes that may need to be (re-)expanded.
   // Initially, only the start node is known.
@@ -57,7 +53,7 @@ public func aStar<Node: Hashable, S: Sequence<Node>>(
 
   // For node n, cameFrom[n] is the node immediately preceding it on the cheapest path from start
   // to n currently known.
-  var cameFrom: [Node: Node] = [:]
+  var cameFrom: [Node: [Node]] = [:]
 
   // For node n, gScore[n] is the cost of the cheapest path from start to n currently known.
   var gScore: [Node: Int] = [start: 0]
@@ -78,9 +74,18 @@ public func aStar<Node: Hashable, S: Sequence<Node>>(
       // tentative_gScore is the distance from start to the neighbor through current
       let tentativeGScore = gScore[current]! + cost(current, neighbor)
       let existing = gScore[neighbor, default: .max]
-      if tentativeGScore < existing {
+      if tentativeGScore == existing {
+        // This path to neighbor is identical to one of the previous ones. Keep both!
+        cameFrom[neighbor, default: []].append(current)
+        gScore[neighbor] = tentativeGScore
+        let score = tentativeGScore + heuristic(neighbor)
+        fScore[neighbor] = score
+        openSet.insert(HeapEntry(node: neighbor, score: score))
+
+      } else if tentativeGScore < existing {
+
         // This path to neighbor is better than any previous one. Record it!
-        cameFrom[neighbor] = current
+        cameFrom[neighbor] = [current]
         gScore[neighbor] = tentativeGScore
         let score = tentativeGScore + heuristic(neighbor)
         fScore[neighbor] = score
@@ -90,7 +95,7 @@ public func aStar<Node: Hashable, S: Sequence<Node>>(
   }
 
   // Open set is empty but goal was never reached
-  return nil
+  return []
 }
 
 private struct HeapEntry<Node>: Comparable where Node: Equatable {
@@ -99,5 +104,15 @@ private struct HeapEntry<Node>: Comparable where Node: Equatable {
 
   static func < (lhs: Self, rhs: Self) -> Bool {
     lhs.score < rhs.score
+  }
+}
+
+private extension Dictionary where Value == [Key] {
+  func reconstructPath(to key: Key) -> [[Key]] {
+    guard let options = self[key] else { return [[key]] }
+
+    return options.flatMap { option in
+      reconstructPath(to: option).map { $0 + [key] }
+    }
   }
 }
