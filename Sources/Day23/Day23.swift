@@ -1,3 +1,5 @@
+import AOCAlgorithms
+
 struct Computer: Hashable {
   let id: String
 
@@ -51,40 +53,6 @@ func interconnectedSets(_ connections: some Sequence<Connection>) -> [Set<Comput
   return Array(sets)
 }
 
-extension Set<Computer> {
-  var perfectDensity: Int {
-    count * (count - 1) / 2
-  }
-
-  func density(connections: Set<Connection>) -> Int {
-    connections.count {
-      contains(Computer(id: $0.id1)) && contains(Computer(id: $0.id2))
-    }
-  }
-
-  func isDense(connections: Set<Connection>) -> Bool {
-    density(connections: connections) == perfectDensity
-  }
-
-  func largestSet(_ connections: Set<Connection>, seen: Set<Computer> = []) -> Set<Computer> {
-    let allNeighbors = self.flatMap { $0.neighbors(in: connections).subtracting(seen).subtracting(self) }
-    guard !allNeighbors.isEmpty else { return self }
-
-    var largestSet = self
-    var seen = seen
-    for neighbor in allNeighbors {
-      let set = self.union([neighbor])
-      if set.isDense(connections: connections), set.count > largestSet.count {
-        largestSet = set.largestSet(connections, seen: seen)
-      } else {
-        seen.insert(neighbor)
-      }
-    }
-
-    return largestSet
-  }
-}
-
 public func part1(input: String) -> Int {
   let connections = input.split(separator: "\n").map(Connection.init)
   let sets = interconnectedSets(connections)
@@ -95,8 +63,9 @@ public func part2(input: String) -> String {
   let connections = Set(input.split(separator: "\n").map(Connection.init))
   let allComputers = Set(connections.flatMap { [Computer(id: $0.id1), Computer(id: $0.id2)] })
 
-  let largestDenseSubset = allComputers.map {
-    Set([$0]).largestSet(connections)
-  }.max(by: { $0.count < $1.count })
-  return largestDenseSubset?.map(\.id).sorted().joined(separator: ",") ?? ""
+  let largestClique = bronKerbosch(p: allComputers) { computer in
+    computer.neighbors(in: connections)
+  }
+
+  return largestClique.map(\.id).sorted().joined(separator: ",")
 }
