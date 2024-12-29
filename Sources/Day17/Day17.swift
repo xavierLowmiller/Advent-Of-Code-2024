@@ -1,21 +1,28 @@
 import AOCAlgorithms
 
 enum Instruction: Int {
-  /// Division (A)
+  /// Division a / combo -> a
   case adv = 0
-  /// Bitwise XOR
+
+  /// Bitwise XOR (B and operand) -> b
   case bxl = 1
-  /// Modulo
+
+  /// Combo modulo 8 -> b
   case bst = 2
-  /// Jump if not zero
+
+  /// Jump to operand if a is not zero
   case jnz = 3
-  /// Bitwise XOR (B and C)
+
+  /// Bitwise XOR (B and C) -> b
   case bxc = 4
-  /// Output
+
+  /// Output combo modulo 8
   case out = 5
-  /// Division (B)
+
+  /// Division a / combo -> b
   case bdv = 6
-  /// Division (C)
+
+  /// Division a / combo -> c
   case cdv = 7
 }
 
@@ -30,14 +37,9 @@ struct Computer {
 
   init(_ input: String) {
 
-    let matchA = input.firstMatch(of: /Register A: (\d+)/)!
-    a = Int(matchA.1)!
-
-    let matchB = input.firstMatch(of: /Register B: (\d+)/)!
-    b = Int(matchB.1)!
-
-    let matchC = input.firstMatch(of: /Register C: (\d+)/)!
-    c = Int(matchC.1)!
+    a = Int(input.firstMatch(of: /Register A: (\d+)/)!.1)!
+    b = Int(input.firstMatch(of: /Register B: (\d+)/)!.1)!
+    c = Int(input.firstMatch(of: /Register C: (\d+)/)!.1)!
 
     instructions = input
       .split(separator: "Program: ")[1]
@@ -60,34 +62,28 @@ struct Computer {
       fatalError()
     }
 
+    var nextIp = ip + 2
+    defer { ip = nextIp }
+
     switch instruction {
     case .adv:
       a = a / (2 ^^ combo)
-      ip += 2
     case .bxl:
       b = b ^ operand
-      ip += 2
     case .bst:
       b = combo % 8
-      ip += 2
+    case .jnz where a != 0:
+      nextIp = operand
     case .jnz:
-      if a == 0 {
-        ip += 2
-      } else {
-        ip = operand
-      }
+      break
     case .bxc:
       b = b ^ c
-      ip += 2
     case .out:
       output.append(combo % 8)
-      ip += 2
     case .bdv:
       b = a / (2 ^^ combo)
-      ip += 2
     case .cdv:
       c = a / (2 ^^ combo)
-      ip += 2
     }
   }
 
@@ -100,14 +96,36 @@ struct Computer {
   }
 
   var selfCopyValue: Int {
-    for a in 0... {
+
+    let lowerBound = 8 ^^ (instructions.count - 1)
+
+    var index = instructions.endIndex - 1
+
+    var value = lowerBound
+
+    while index >= instructions.startIndex {
+      let incr = 8 ^^ (index - 1)
+
+      let length = instructions.count - index + 1
+
       var copy = self
-      copy.a = a
-      if copy.instructions == copy.run() {
-        return a
+      copy.a = value
+      var output = copy.run()
+
+      while instructions.suffix(length) != output.suffix(length) {
+        value += incr
+        var copy = self
+        copy.a = value
+        output = copy.run()
       }
+      index -= 1
     }
-    return -1
+
+    var copy = self
+    copy.a = value
+    assert(copy.instructions == copy.run())
+
+    return value
   }
 }
 

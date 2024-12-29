@@ -36,7 +36,7 @@ func part1(input: String, expected: [Int]?) {
 @Test(
   arguments: [
     (testInput2, 117440),
-//    (input, nil)
+    (input, nil as Int?)
   ]
 )
 func part2(input: String, expected: Int?) {
